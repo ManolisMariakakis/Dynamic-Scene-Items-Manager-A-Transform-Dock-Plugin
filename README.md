@@ -108,7 +108,9 @@ The tool includes 4 set Save/Retrieve Buttons that enable saving and retrieving 
 
 A sample of the dock web page is presented below:
 
-<img src="https://github.com/ManolisMariakakis/OBS-Dynamic-Transformation-Tool/blob/main/dock.png"/>.
+<img src="https://github.com/ManolisMariakakis/OBS-Dynamic-Transformation-Tool/blob/main/dock.png"/>
+
+---
 
 ## WebSocket Commands and Authentication
 
