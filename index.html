@@ -1,0 +1,641 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OBS Dynamic Transformation Tool</title>
+    <meta name="description" content="https://github.com/ManolisMariakakis/OBS-Dynamic-Transformation-Tool?tab=GPL-3.0-1-ov-file#readme">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 10px;
+        }
+
+        h3 {
+            text-align: left;
+            color: #333;
+            max-width: 600px;
+            margin: 0;
+            padding-top: 10px;
+            padding-bottom: 10px;
+        }
+
+        .form-group {
+            display: flex;
+            align-items: center;
+            margin-bottom: 5px;
+        }
+
+        .form-group label {
+            width: 80px;
+            font-weight: normal;
+            font-size: 12px;
+        }
+
+        .form-group input {
+            padding: 5px 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-size: 12px;
+        }
+
+        .form-group input[type="number"] {
+            width: 50px !important;
+            flex: 0 0 auto;
+        }
+
+        button {
+            display: block;
+            padding: 5px 5px;
+            margin-top: 10px;
+            margin-right: 5px;
+            font-size: 12px;
+            color: #fff;
+            background-color: #011c3a;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background-color: #023a76;
+        }
+
+        .container {
+            max-width: 300px;
+            margin: 0;
+        }
+
+        button.disabled {
+            background-color: #e0e0e0;
+            color: #a0a0a0;
+            pointer-events: none;
+            opacity: 0.6;
+        }
+
+        button.enabled {
+            background-color: #011c3a;
+            color: #ffffff;
+            opacity: 1;
+        }
+
+        button.enabled:hover {
+            background-color: #023a76;
+        }
+
+        #toggleCheckbox {
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            border: 2px solid #ccc;
+            border-radius: 4px;
+            background-color: white;
+            cursor: pointer;
+            transition: background-color 0.3s, border-color 0.3s;
+        }
+
+        #toggleCheckbox:checked {
+            background-color: #011c3a;
+            border-color: #011c3a;
+        }
+    </style>
+</head>
+
+<body>
+    <h3>Dynamic Transformation Tool</h3>
+
+    <div class="container">
+        <div class="form-group">
+            <label for="scene-select">Scene:</label>
+            <select id="scene-select">
+                <option value="">Select a scene</option>
+            </select>
+        </div>
+        <div class="form-group">
+            <label for="datasource-select">Datasources:</label>
+            <select id="datasource-select">
+                <option value="">Select a datasource</option>
+            </select>
+        </div>
+        <!-- Input Fields -->
+        <div class="form-group">
+            <label for="scene">Scene Name</label>
+            <input disabled style="width: 200px !important;" type="text" id="scene" placeholder="Select scene name">
+        </div>
+
+        <div class="form-group">
+            <label for="dataSource">Data Source Name</label>
+            <input disabled style="width: 200px !important;" type="text" id="dataSource"
+                placeholder="Select data source name">
+        </div>
+
+        <div class="form-group">
+            <label for="positionX">Position X</label>
+            <input class="listen" type="number" id="positionX" placeholder="Enter X position" value="0">
+            <label for="positionY">&nbsp;&nbsp;Position Y</label>
+            <input class="listen" type="number" id="positionY" placeholder="Enter Y position" value="0">
+        </div>
+
+        <div class="form-group">
+            <label for="scale">Scale</label>
+            <input class="listen" type="number" id="scale" step="0.01" min="0" max="1" placeholder="Enter scale"
+                value="1">
+            <label for="rotation">&nbsp;&nbsp;Rotation</label>
+            <input class="listen" type="number" id="rotation" min="0" max="360" placeholder="Enter rotation (degrees)"
+                value="0">
+        </div>
+
+        <div class="form-group">
+            <label for="cropTop">Crop Top</label>
+            <input class="listen" type="number" id="cropTop" min="0" placeholder="Enter crop top" value="0">
+            <label for="cropLeft">&nbsp;&nbsp;Crop Left</label>
+            <input class="listen" type="number" id="cropLeft" min="0" placeholder="Enter crop left" value="0">
+        </div>
+
+        <div class="form-group">
+            <label for="cropBottom">Crop Bottom</label>
+            <input class="listen" type="number" id="cropBottom" min="0" placeholder="Enter crop bottom" value="0">
+            <label for="cropRight">&nbsp;&nbsp;Crop Right</label>
+            <input class="listen" type="number" id="cropRight" min="0" placeholder="Enter crop right" value="0">
+        </div>
+
+        <div class="form-group">
+            <label for="toggleCheckbox">Enable Save Buttons</label>
+            <input class="listen" type="checkbox" id="toggleCheckbox">
+        </div>
+
+        <div class="form-group">
+            <button id="save1" class="disabled" disabled>S1</button>
+            <button id="save2" class="disabled" disabled>S2</button>
+            <button id="save3" class="disabled" disabled>S3</button>
+            <button id="save4" class="disabled" disabled>S4</button>
+            <button id="refreshDatasource">Refresh</button>
+            <button id="retrieve1">T1</button>
+            <button id="retrieve2">T2</button>
+            <button id="retrieve3">T3</button>
+            <button id="retrieve4">T4</button>
+        </div>
+    </div>
+
+    <script>
+        const DEFAULT_OBS_HOST = "ws://192.168.1.162:4455"; // Replace with your OBS WebSocket URL
+        const DEFAULT_OBS_PASSWORD = "1234567890"; // Replace with your WebSocket password
+        const DEFAULT_LOG = false; // Set to false to disable logging
+
+        const sceneSelect = document.getElementById("scene-select");
+        const datasourceSelect = document.getElementById("datasource-select");
+
+        let obs; // WebSocket connection
+        let sceneItemId = null;
+
+        function attachInputListeners() {
+            const inputs = document.querySelectorAll("input.listen");
+            inputs.forEach(input => {
+                input.removeEventListener("input", handleInputChange); // Prevent duplicate listeners
+                input.addEventListener("input", handleInputChange); // Use 'input' instead of 'change'
+            });
+            consoleLog("Listeners attached to all input fields.");
+        }
+
+        // Handle input changes
+        function handleInputChange() {
+            const sceneValue = document.getElementById("scene").value.trim();
+            const dataSourceValue = document.getElementById("dataSource").value.trim();
+            if (!dataSourceValue || !sceneValue) {
+                consoleLog("Required inputs are missing. Please provide values for both 'dataSource' and 'scene'.");
+                return;
+            }
+            if (sceneItemId !== null) {
+                consoleLog("Scene Item ID exists. Applying transformation.");
+                applyTransform();
+            }
+        }
+
+        function fetchSceneItemId() {
+            // Get the selected option's data-id attribute
+            const selectedOption = datasourceSelect.options[datasourceSelect.selectedIndex];
+            const dataId = selectedOption ? selectedOption.getAttribute("data-id") : null;
+
+            if (dataId) {
+                consoleLog(`Found sceneItemId from data-id attribute: ${dataId}`);
+                sceneItemId = parseInt(dataId, 10); // Parse the ID as an integer
+            } else {
+                console.error("No data-id attribute found for the selected datasource.");
+            }
+        }
+
+
+        // Fetch Transform Values from OBS
+        function fetchTransformValues(sceneItemId) {
+            const sceneName = document.getElementById("scene").value;
+            consoleLog(`Fetching transform values for Scene Item ID: ${sceneItemId}`);
+
+            obs.send(JSON.stringify({
+                op: 6,
+                d: {
+                    requestType: "GetSceneItemTransform",
+                    requestId: "fetchTransformValues",
+                    requestData: {
+                        sceneName: sceneName,
+                        sceneItemId: sceneItemId,
+                    },
+                },
+            }));
+        }
+
+        // Update Input Fields with Transform Values
+        function updateInputFields(transform) {
+            consoleLog("Updating input fields with transform values:", transform);
+
+            document.getElementById("positionX").value = transform.positionX || 0;
+            document.getElementById("positionY").value = transform.positionY || 0;
+            document.getElementById("scale").value = parseFloat(transform.scaleX).toFixed(2) || 1; // Assume scaleX and scaleY are the same;
+            document.getElementById("rotation").value = transform.rotation || 0;
+            document.getElementById("cropLeft").value = transform.cropLeft || 0;
+            document.getElementById("cropTop").value = transform.cropTop || 0;
+            document.getElementById("cropRight").value = transform.cropRight || 0;
+            document.getElementById("cropBottom").value = transform.cropBottom || 0;
+        }
+
+
+        // Apply Transformations to OBS Scene Item
+        function applyTransform() {
+            if (sceneItemId === null) {
+                console.error("Scene Item ID is not set. Unable to apply transform.");
+                return;
+            }
+
+            const sceneName = document.getElementById("scene").value;
+            const positionX = parseFloat(document.getElementById("positionX").value);
+            const positionY = parseFloat(document.getElementById("positionY").value);
+            const scale = parseFloat(parseFloat(document.getElementById("scale").value).toFixed(2));
+            const rotation = parseFloat(document.getElementById("rotation").value);
+            const cropLeft = parseFloat(document.getElementById("cropLeft").value);
+            const cropTop = parseFloat(document.getElementById("cropTop").value);
+            const cropRight = parseFloat(document.getElementById("cropRight").value);
+            const cropBottom = parseFloat(document.getElementById("cropBottom").value);
+
+            consoleLog("Applying transformation with data:", {
+                sceneName,
+                positionX,
+                positionY,
+                scaleX: scale,
+                scaleY: scale,
+                rotation,
+                cropLeft,
+                cropTop,
+                cropRight,
+                cropBottom,
+            });
+
+            // Send the transformation data to OBS
+            obs.send(JSON.stringify({
+                op: 6,
+                d: {
+                    requestType: "SetSceneItemTransform",
+                    requestId: "applyTransform",
+                    requestData: {
+                        sceneName: sceneName,
+                        sceneItemId: sceneItemId,
+                        sceneItemTransform: {
+                            positionX,
+                            positionY,
+                            scaleX: scale,
+                            scaleY: scale,
+                            rotation,
+                            cropLeft,
+                            cropTop,
+                            cropRight,
+                            cropBottom,
+                        },
+                    },
+                },
+            }));
+        }
+
+        // Connect to OBS WebSocket
+        function connectWebSocket(obsHost, obsPassword) {
+            obs = new WebSocket(obsHost);
+
+            obs.onopen = () => {
+                consoleLog(`Connected to OBS WebSocket at ${obsHost}`);
+            };
+
+            obs.onmessage = async (event) => {
+                const response = JSON.parse(event.data);
+                consoleLog("WebSocket Response:", response);
+                switch (response.op) {
+                    case 0: // Hello message
+                        if (response.op === 0 && response.d.authentication) {
+                            consoleLog("OBS WebSocket: Received Hello Message");
+                            const { salt, challenge } = response.d.authentication;
+
+                            const mdp = obsPassword + salt;
+                            const hashedMdp = await encodeSHA256(mdp);
+                            const encode1 = toBase64(parseHex(hashedMdp));
+                            const combined = encode1 + challenge;
+                            const hashedCombined = await encodeSHA256(combined);
+                            const encode2 = toBase64(parseHex(hashedCombined));
+
+                            obs.send(JSON.stringify({
+                                op: 1,
+                                d: {
+                                    rpcVersion: 1,
+                                    authentication: encode2,
+                                },
+                            }));
+                            consoleLog("Authentication request sent to OBS.");
+                        }
+                        break;
+
+                    case 2: // Authentication success
+                        if (response.op === 2) {
+                            consoleLog("Authentication success. Requesting scenes and datasources.");
+                            obs.send(JSON.stringify({
+                                op: 6,
+                                d: {
+                                    requestType: "GetSceneList",
+                                    requestId: "getScenes"
+                                }
+                            }));
+                        }
+                        break;
+
+                    case 5:
+                        if (response.d.eventType === "SceneItemSelected") {
+                            consoleLog("SceneItemSelected event received:", response.d.eventData);
+
+                            const { sceneItemId, sceneName } = response.d.eventData;
+
+                            // Update the scene select combobox
+                            updateSceneSelect(sceneName);
+
+                            // Update the datasource select combobox
+                            setTimeout(() => updateDatasourceSelect(sceneItemId), 1000);
+                        }
+
+                        break;
+
+                    case 7: // Request responses
+                        if (response.d && response.d.requestId) {
+
+                            if (response.d.eventType === "SceneItemTransformChanged") {
+                                alert(response.d.eventData);
+                            }
+
+                            if (response.d && response.d.requestId === "getScenes") {
+                                const scenes = response.d.responseData.scenes;
+                                consoleLog("Scenes:", scenes);
+                                sceneSelect.innerHTML = '<option value="">Select a scene</option>';
+                                scenes.forEach(scene => {
+                                    const option = document.createElement("option");
+                                    option.value = scene.sceneName;
+                                    option.textContent = scene.sceneName;
+                                    sceneSelect.appendChild(option);
+                                });
+                            }
+
+                            if (response.d && response.d.requestId.startsWith("getDatasources:")) {
+                                const datasources = response.d.responseData.sceneItems;
+                                consoleLog("Datasources for scene:", datasources);
+                                datasourceSelect.innerHTML = '<option value="">Select a datasource</option>';
+                                datasources.forEach(datasource => {
+                                    const option = document.createElement("option");
+                                    option.value = datasource.sourceName;
+                                    option.setAttribute("data-id", datasource.sceneItemId);
+                                    option.textContent = datasource.sourceName;
+                                    datasourceSelect.appendChild(option);
+                                });
+                            }
+
+                            if (response.d && response.d.requestId === "fetchTransformValues") {
+                                updateInputFields(response.d.responseData.sceneItemTransform);
+                            }
+                        }
+                        break;
+
+                    default:
+                        console.warn("Unhandled WebSocket message:", response);
+                }
+
+
+            };
+
+            obs.onclose = (event) => {
+                consoleLog(`WebSocket closed: Code=${event.code}, Reason=${event.reason}`);
+            };
+
+            obs.onerror = (error) => {
+                console.error("WebSocket error:", error);
+            };
+        }
+
+        datasourceSelect.addEventListener("change", () => {
+            const selectedDatasource = datasourceSelect.value;
+            if (selectedDatasource) {
+                consoleLog(`Datasource selected: ${selectedDatasource}`);
+                document.getElementById("dataSource").value = selectedDatasource;
+                enableAllInputs();
+                fetchSceneItemId();
+                if (sceneItemId) {
+                    consoleLog("Fetching transform values...");
+                    fetchTransformValues(sceneItemId);
+                }
+            } else {
+                consoleLog("No datasource selected.");
+            }
+        });
+
+        sceneSelect.addEventListener("change", () => {
+            const selectedScene = sceneSelect.value;
+
+            document.getElementById("scene").value = selectedScene;
+            document.getElementById("dataSource").value = 'Select a datasource';
+            disableAllInputs();
+
+            if (selectedScene) {
+                obs.send(JSON.stringify({
+                    op: 6,
+                    d: {
+                        requestType: "GetSceneItemList",
+                        requestId: `getDatasources:${selectedScene}`,
+                        requestData: { sceneName: selectedScene },
+                    },
+                }));
+            }
+        });
+
+        async function encodeSHA256(input) {
+            const encoder = new TextEncoder();
+            const data = encoder.encode(input);
+            const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+            return Array.from(new Uint8Array(hashBuffer))
+                .map(byte => byte.toString(16).padStart(2, '0'))
+                .join('');
+        }
+
+        function toBase64(bytes) {
+            return btoa(String.fromCharCode(...bytes));
+        }
+
+        function parseHex(str) {
+            const result = [];
+            for (let i = 0; i < str.length; i += 2) {
+                result.push(parseInt(str.substring(i, i + 2), 16));
+            }
+            return result;
+        }
+
+
+        document.getElementById("refreshDatasource").addEventListener("click", () => {
+            const event = new Event("change");
+            datasourceSelect.dispatchEvent(event);
+        });
+
+        // Save transform data to localStorage
+        function saveTransform(key) {
+            const transformData = {
+                sceneName: document.getElementById("scene").value,
+                dataSourceName: document.getElementById("dataSource").value,
+                positionX: parseFloat(document.getElementById("positionX").value),
+                positionY: parseFloat(document.getElementById("positionY").value),
+                scale: parseFloat(parseFloat(document.getElementById("scale").value).toFixed(2)),
+                rotation: parseFloat(document.getElementById("rotation").value),
+                cropLeft: parseFloat(document.getElementById("cropLeft").value),
+                cropTop: parseFloat(document.getElementById("cropTop").value),
+                cropRight: parseFloat(document.getElementById("cropRight").value),
+                cropBottom: parseFloat(document.getElementById("cropBottom").value),
+                sceneItemId: sceneItemId,
+            };
+            localStorage.setItem(key, JSON.stringify(transformData));
+            consoleLog(`Saved transform to ${key}:`, transformData);
+        }
+
+        // Retrieve transform data from localStorage and populate inputs
+        function retrieveTransform(key) {
+            const storedData = localStorage.getItem(key);
+            if (storedData) {
+                const transformData = JSON.parse(storedData);
+                document.getElementById("scene").value = transformData.sceneName || "";
+                document.getElementById("dataSource").value = transformData.dataSourceName || "";
+                document.getElementById("positionX").value = transformData.positionX || 0;
+                document.getElementById("positionY").value = transformData.positionY || 0;
+                document.getElementById("scale").value = parseFloat(transformData.scale).toFixed(2) || 1;
+                document.getElementById("rotation").value = transformData.rotation || 0;
+                document.getElementById("cropLeft").value = transformData.cropLeft || 0;
+                document.getElementById("cropTop").value = transformData.cropTop || 0;
+                document.getElementById("cropRight").value = transformData.cropRight || 0;
+                document.getElementById("cropBottom").value = transformData.cropBottom || 0;
+                sceneItemId = transformData.sceneItemId;
+                enableAllInputs();
+
+                consoleLog(`Retrieved transform from ${key}:`, transformData);
+
+                // Apply transform to OBS
+                applyTransform();
+            } else {
+                console.warn(`No data found in ${key}`);
+            }
+        }
+
+
+        // Event Listeners for Save and Retrieve Buttons
+        document.getElementById("save1").addEventListener("click", () => saveTransform("DTT1"));
+        document.getElementById("save2").addEventListener("click", () => saveTransform("DTT2"));
+        document.getElementById("save3").addEventListener("click", () => saveTransform("DTT3"));
+        document.getElementById("save4").addEventListener("click", () => saveTransform("DTT4"));
+
+        document.getElementById("retrieve1").addEventListener("click", () => retrieveTransform("DTT1"));
+        document.getElementById("retrieve2").addEventListener("click", () => retrieveTransform("DTT2"));
+        document.getElementById("retrieve3").addEventListener("click", () => retrieveTransform("DTT3"));
+        document.getElementById("retrieve4").addEventListener("click", () => retrieveTransform("DTT4"));
+
+
+        // Get the checkbox and buttons
+        const toggleCheckbox = document.getElementById("toggleCheckbox");
+        const buttons = ["save1", "save2", "save3", "save4"].map(id => document.getElementById(id));
+
+        // Add event listener to the checkbox
+        toggleCheckbox.addEventListener("change", () => {
+            const isChecked = toggleCheckbox.checked; // Check the checkbox state
+            buttons.forEach(button => {
+                if (isChecked) {
+                    button.classList.remove("disabled");
+                    button.classList.add("enabled");
+                    button.removeAttribute("disabled");
+                } else {
+                    button.classList.remove("enabled");
+                    button.classList.add("disabled");
+                    button.setAttribute("disabled", true);
+                }
+            });
+        });
+
+        function disableAllInputs() {
+            const inputs = document.querySelectorAll("input.listen");
+            inputs.forEach(input => {
+                input.disabled = true;
+            });
+        }
+
+        function enableAllInputs() {
+            const inputs = document.querySelectorAll("input.listen");
+            inputs.forEach(input => {
+                input.disabled = false;
+            });
+        }
+
+
+        window.onload = () => {
+            disableAllInputs();
+            attachInputListeners();
+            connectWebSocket(DEFAULT_OBS_HOST, DEFAULT_OBS_PASSWORD);
+        };
+
+
+
+        function updateSceneSelect(sceneName) {
+            const sceneOptions = Array.from(sceneSelect.options);
+            sceneOptions.forEach(option => {
+                option.selected = option.value === sceneName;
+            });
+
+            document.getElementById("scene").value = sceneName;
+            const sceneChangeEvent = new Event("change");
+            sceneSelect.dispatchEvent(sceneChangeEvent);
+        }
+
+        function updateDatasourceSelect(sceneItemId) {
+            const datasourceOptions = Array.from(datasourceSelect.options).filter(option =>
+                option.getAttribute("data-id") !== null
+            );
+
+            const matchedOption = datasourceOptions.find(option =>
+                parseInt(option.getAttribute("data-id"), 10) === sceneItemId
+            );
+
+            if (matchedOption) {
+                matchedOption.selected = true;
+
+                const selectedDatasource = datasourceSelect.value;
+                document.getElementById("dataSource").value = selectedDatasource;
+
+                const datasourceChangeEvent = new Event("change");
+                datasourceSelect.dispatchEvent(datasourceChangeEvent);
+
+                consoleLog(`Datasource successfully updated to: ${selectedDatasource}`);
+            } else {
+                consoleLog("No matching datasource found for the given sceneItemId.");
+            }
+        }
+
+        function consoleLog(...args) {
+            if (DEFAULT_LOG) {
+                console.log(...args);
+            }
+        }
+    </script>
+</body>
+
+</html>
