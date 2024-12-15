@@ -90,6 +90,7 @@ The tool includes 4 set Save/Retrieve Buttons that enable saving and retrieving 
   - scale: Scaling factor of the item.
   - rotation: Rotation of the item in degrees.
   - cropLeft, cropTop, cropRight, cropBottom: Cropping parameters for the item.
+  - sceneItemId: Scene item ID (data source, group)
 
 ### Retrieve Buttons (T1, T2, T3, T4):
 - Function: Retrieve previously saved values from localStorage and apply the transformation to the OBS scene item.
