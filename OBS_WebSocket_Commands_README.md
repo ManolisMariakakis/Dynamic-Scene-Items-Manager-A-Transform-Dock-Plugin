@@ -291,7 +291,7 @@ Ensure placeholders like <scene_name> and <source_name_number> are dynamically r
     ```
 ---
 
-### 5. **Connect to OBS WebSocket (ws://localhost:4455)**
+### 6. **Connect to OBS WebSocket (ws://localhost:4455)**
 - **Command**:
   The connection is initiated using the WebSocket URL `ws://localhost:4455`.
 
