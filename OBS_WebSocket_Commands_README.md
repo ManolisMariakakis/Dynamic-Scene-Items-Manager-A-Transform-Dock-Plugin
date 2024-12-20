@@ -32,16 +32,16 @@ Ensure placeholders like <scene_name> and <source_name_number> are dynamically r
         "code": 100
       },
       "responseData": {
-        "currentProgramSceneName": "Scene 1",
-        "currentPreviewSceneName": "Scene 2",
+        "currentProgramSceneName": "<scene_name>",
+        "currentPreviewSceneName": "<scene_name>",
         "scenes": [
           {
             "sceneIndex": 0,
-            "sceneName": "Scene 1"
+            "sceneName": "<scene_name>"
           },
           {
             "sceneIndex": 1,
-            "sceneName": "Scene 2"
+            "sceneName": "<scene_name>"
           }
         ]
       }
