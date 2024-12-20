@@ -208,7 +208,7 @@ Ensure placeholders like <scene_name> and <source_name_number> are dynamically r
 
   ### Authentication Process
 
-    The `authentication` string is calculated as follows:
+    The `<authentication string>` is calculated as follows:
 
     ### 1. Receive the Salt and Challenge
     OBS WebSocket sends a "Hello" message containing:
