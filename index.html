@@ -362,7 +362,7 @@
                         }
                         break;
 
-                    case 5:
+                    case 5: // Event messages from OBS
                         if (response.d.eventType === "SceneItemSelected") {
                             consoleLog("SceneItemSelected event received:", response.d.eventData);
 
@@ -379,10 +379,6 @@
 
                     case 7: // Request responses
                         if (response.d && response.d.requestId) {
-
-                            if (response.d.eventType === "SceneItemTransformChanged") {
-                                alert(response.d.eventData);
-                            }
 
                             if (response.d && response.d.requestId === "getScenes") {
                                 const scenes = response.d.responseData.scenes;
